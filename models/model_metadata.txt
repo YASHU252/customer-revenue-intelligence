@@ -1,0 +1,32 @@
+CHURN PREDICTION MODEL
+======================
+
+Training Date: [Your date]
+Model Type: XGBoost Classifier
+Training Data: 93,357 customers
+
+FEATURES USED:
+- recency (days since last purchase)
+- frequency (total orders)
+- monetary (total spent)
+- avg_review_score
+- avg_delivery_days
+- late_delivery_rate
+
+PERFORMANCE:
+- Accuracy: [your metric]%
+- Precision: [your metric]%
+- Recall: [your metric]%
+- ROC-AUC: [your metric]
+
+CHURN DEFINITION:
+No purchase in 90+ days after last order
+
+CLASS BALANCE:
+- Training set: [your split]
+- Handled with: SMOTE
+
+HYPERPARAMETERS:
+- max_depth: [value]
+- n_estimators: [value]
+- learning_rate: [value]

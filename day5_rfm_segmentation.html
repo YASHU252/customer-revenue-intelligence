@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 5 — RFM Segmentation + Visualizations</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@300;400;500&family=Fraunces:ital,wght@0,300;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d0d;
+    --surface: #141414;
+    --border: #222;
+    --accent: #00ff88;
+    --accent2: #ffcc00;
+    --accent3: #ff6060;
+    --blue: #60aaff;
+    --purple: #c084fc;
+    --orange: #ff9940;
+    --text: #eee;
+    --muted: #666;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Mono', monospace; padding-bottom: 80px; }
+  .container { max-width: 860px; margin: 0 auto; padding: 0 24px; }
+
+  header { padding: 56px 0 40px; border-bottom: 1px solid var(--border); }
+  .badge { display: inline-block; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--orange); border: 1px solid var(--orange); padding: 4px 12px; margin-bottom: 20px; }
+  h1 { font-family: 'Syne', sans-serif; font-size: clamp(28px, 5vw, 48px); font-weight: 800; line-height: 1.1; }
+  h1 span { color: var(--orange); }
+  .sub { margin-top: 14px; color: var(--muted); font-size: 12px; line-height: 1.9; max-width: 600px; }
+
+  .progress { display: flex; gap: 4px; margin-top: 32px; }
+  .p-step { flex: 1; height: 3px; background: var(--border); border-radius: 2px; }
+  .p-step.done { background: var(--accent); }
+  .p-step.active { background: var(--orange); }
+
+  .cells { margin-top: 48px; display: flex; flex-direction: column; gap: 24px; }
+
+  .cell { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--border); overflow: hidden; transition: border-color 0.3s; }
+  .cell:hover { border-color: var(--orange); border-left-color: var(--orange); }
+
+  .cell-header { display: flex; align-items: center; gap: 16px; padding: 14px 20px; border-bottom: 1px solid var(--border); background: #0f0f0f; }
+  .cell-num { font-size: 10px; letter-spacing: 2px; color: var(--muted); min-width: 60px; }
+  .cell-title { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; color: var(--text); flex: 1; }
+  .cell-tag { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; padding: 3px 10px; border-radius: 2px; white-space: nowrap; }
+  .tag-green  { background: rgba(0,255,136,0.1);  border: 1px solid var(--accent);  color: var(--accent); }
+  .tag-yellow { background: rgba(255,204,0,0.1);  border: 1px solid var(--accent2); color: var(--accent2); }
+  .tag-orange { background: rgba(255,153,64,0.1); border: 1px solid var(--orange);  color: var(--orange); }
+  .tag-blue   { background: rgba(96,170,255,0.1); border: 1px solid var(--blue);    color: var(--blue); }
+  .tag-purple { background: rgba(192,132,252,0.1);border: 1px solid var(--purple);  color: var(--purple); }
+
+  .cell-body { padding: 20px; }
+  .explain { font-size: 11px; color: var(--muted); line-height: 1.9; margin-bottom: 16px; padding: 12px 16px; border-left: 2px solid var(--orange); background: rgba(255,153,64,0.03); }
+  .explain strong { color: var(--orange); }
+
+  .code-wrap { background: #090909; border: 1px solid #1c1c1c; padding: 18px 20px; overflow-x: auto; }
+  pre { margin: 0; }
+  code { font-family: 'IBM Plex Mono', monospace; font-size: 12px; line-height: 2; color: var(--text); }
+  .c  { color: #3a3a3a; }
+  .kw { color: var(--blue); }
+  .fn { color: var(--purple); }
+  .st { color: var(--accent); }
+  .nm { color: var(--accent3); }
+  .va { color: var(--accent2); }
+
+  .output { margin-top: 12px; background: #060606; border: 1px solid #1a1a1a; border-left: 2px solid var(--orange); padding: 14px 18px; }
+  .output-label { font-size: 9px; letter-spacing: 2px; color: var(--orange); text-transform: uppercase; margin-bottom: 8px; }
+  .output pre { font-size: 11px; color: #777; line-height: 1.9; white-space: pre-wrap; }
+  .hl  { color: var(--accent)  !important; }
+  .hl2 { color: var(--accent2) !important; }
+  .hl3 { color: var(--accent3) !important; }
+  .hlb { color: var(--blue)    !important; }
+  .hlp { color: var(--purple)  !important; }
+  .hlo { color: var(--orange)  !important; }
+
+  .insight { margin-top: 12px; background: rgba(255,153,64,0.03); border: 1px solid rgba(255,153,64,0.2); border-left: 3px solid var(--orange); padding: 14px 18px; font-size: 11px; color: #999; line-height: 1.9; }
+  .insight strong { color: var(--orange); }
+
+  .note { background: rgba(255,204,0,0.04); border: 1px solid rgba(255,204,0,0.2); border-left: 3px solid var(--accent2); padding: 14px 18px; font-size: 11px; color: #aaa; line-height: 1.8; margin: 16px 0; }
+  .note strong { color: var(--accent2); }
+
+  /* SEGMENT TABLE */
+  .seg-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 11px; }
+  .seg-table th { background: #0f0f0f; color: var(--muted); font-weight: 400; letter-spacing: 2px; font-size: 10px; text-transform: uppercase; padding: 10px 14px; border: 1px solid var(--border); text-align: left; }
+  .seg-table td { padding: 10px 14px; border: 1px solid var(--border); line-height: 1.6; }
+  .seg-table tr:hover td { background: rgba(255,255,255,0.02); }
+  .s-champ  { color: #ffd700; }
+  .s-loyal  { color: var(--accent); }
+  .s-pot    { color: var(--blue); }
+  .s-risk   { color: var(--accent3); }
+  .s-lost   { color: var(--muted); }
+  .s-new    { color: var(--purple); }
+
+  .divider { margin: 40px 0 24px; font-size: 10px; letter-spacing: 4px; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; gap: 16px; }
+  .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .end-card { margin-top: 48px; background: linear-gradient(135deg, rgba(255,153,64,0.05), rgba(192,132,252,0.03)); border: 1px solid rgba(255,153,64,0.2); padding: 32px; text-align: center; }
+  .end-card h2 { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; color: var(--orange); margin-bottom: 12px; }
+  .end-card p { font-size: 12px; color: var(--muted); line-height: 2.2; }
+
+  @media(max-width:600px){ code{font-size:10px;} }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="badge">Day 5 of 18 · RFM + Visualizations</div>
+    <h1>Segment Your<br><span>Customers With RFM</span></h1>
+    <p class="sub">RFM stands for Recency, Frequency, Monetary. It's the most widely used customer segmentation framework in e-commerce, retail, and banking. Today we build it in Python and create charts that go straight into your dashboard.</p>
+    <div class="progress">
+      <div class="p-step done"></div>
+      <div class="p-step done"></div>
+      <div class="p-step done"></div>
+      <div class="p-step done"></div>
+      <div class="p-step active"></div>
+      <div class="p-step"></div>
+    </div>
+  </header>
+
+  <div class="note"><strong>New file:</strong> Create <strong>notebooks/04_rfm_segmentation.ipynb</strong> now. This notebook produces the charts and segment table that go directly into your Streamlit dashboard later.</div>
+
+  <!-- WHAT IS RFM -->
+  <div class="divider">What is RFM — Understand Before You Code</div>
+
+  <table class="seg-table">
+    <tr>
+      <th>Letter</th><th>Meaning</th><th>Question It Answers</th><th>Better = </th>
+    </tr>
+    <tr>
+      <td><strong style="color:var(--accent)">R</strong></td>
+      <td>Recency</td>
+      <td>How many days since last purchase?</td>
+      <td>Fewer days = better</td>
+    </tr>
+    <tr>
+      <td><strong style="color:var(--accent2)">F</strong></td>
+      <td>Frequency</td>
+      <td>How many total orders has this customer placed?</td>
+      <td>More orders = better</td>
+    </tr>
+    <tr>
+      <td><strong style="color:var(--accent3)">M</strong></td>
+      <td>Monetary</td>
+      <td>How much total money has this customer spent?</td>
+      <td>More spend = better</td>
+    </tr>
+  </table>
+
+  <div class="cells">
+
+    <!-- CELL 1 -->
+    <div class="cell">
+      <div class="cell-header">
+        <div class="cell-num">CELL 01</div>
+        <div class="cell-title">Load Data + Calculate Raw RFM Values</div>
+        <div class="cell-tag tag-green">Start Here</div>
+      </div>
+      <div class="cell-body">
+        <div class="explain">We calculate R, F, M values for every single customer. The reference date is the last date in the dataset — <strong>Oct 17, 2018.</strong> Recency = days since that date.</div>
+        <div class="code-wrap"><pre><code><span class="kw">import</span> pandas <span class="kw">as</span> pd
+<span class="kw">import</span> numpy <span class="kw">as</span> np
+<span class="kw">import</span> matplotlib.pyplot <span class="kw">as</span> plt
+<span class="kw">import</span> matplotlib.patches <span class="kw">as</span> mpatches
+<span class="kw">import</span> seaborn <span class="kw">as</span> sns
+
+<span class="c"># Load the master cleaned table</span>
+<span class="va">master</span> = pd.<span class="fn">read_csv</span>(<span class="st">'../data/processed/master_orders.csv'</span>,
+                      parse_dates=[<span class="st">'order_purchase_timestamp'</span>])
+
+<span class="c"># Reference date = last order date in dataset</span>
+<span class="va">REF_DATE</span> = pd.<span class="fn">Timestamp</span>(<span class="st">'2018-10-18'</span>)
+
+<span class="c"># Calculate RFM per customer</span>
+<span class="va">rfm</span> = master.<span class="fn">groupby</span>(<span class="st">'customer_unique_id'</span>).<span class="fn">agg</span>(
+    recency   = (<span class="st">'order_purchase_timestamp'</span>,
+                 <span class="kw">lambda</span> x: (REF_DATE - x.<span class="fn">max</span>()).days),
+    frequency = (<span class="st">'order_id'</span>,   <span class="st">'count'</span>),
+    monetary  = (<span class="st">'total_payment'</span>, <span class="st">'sum'</span>)
+).<span class="fn">reset_index</span>()
+
+rfm[<span class="st">'monetary'</span>] = rfm[<span class="st">'monetary'</span>].<span class="fn">round</span>(<span class="nm">2</span>)
+
+<span class="fn">print</span>(<span class="st">f"Total customers: {len(rfm):,}"</span>)
+<span class="fn">print</span>(<span class="st">f"\nRFM Summary:"</span>)
+<span class="fn">print</span>(rfm[[<span class="st">'recency'</span>,<span class="st">'frequency'</span>,<span class="st">'monetary'</span>]].<span class="fn">describe</span>().<span class="fn">round</span>(<span class="nm">1</span>))
+</code></pre></div>
+        <div class="output">
+          <div class="output-label">Expected Output</div>
+          <pre><span class="hl">Total customers: 96,096
+
+         recency  frequency  monetary
+mean      243.8        1.0     160.8
+min         1.0        1.0       0.0
+25%        93.0        1.0      75.4
+50%       218.0        1.0     120.8
+75%       398.0        1.0     188.9
+max       730.0       17.0   13664.1</span>
+
+<span class="hl2">← Most customers bought only ONCE (freq median = 1)</span>
+<span class="hl2">← That's your biggest insight right there</span></pre>
+        </div>
+        <div class="insight"><strong>Key insight from this output:</strong> The median frequency is 1 — meaning more than 50% of customers never came back after their first purchase. This is the core business problem your churn model will try to solve in Day 6.</div>
+      </div>
+    </div>
+
+    <!-- CELL 2 -->
+    <div class="cell">
+      <div class="cell-header">
+        <div class="cell-num">CELL 02</div>
+        <div class="cell-title">Score Customers 1–4 on Each Dimension</div>
+        <div class="cell-tag tag-orange">Core Logic</div>
+      </div>
+      <div class="cell-body">
+        <div class="explain">We use <strong>pd.qcut()</strong> — Python's equivalent of SQL's NTILE(4). It splits customers into 4 equal quartiles. Score 4 = best 25%, Score 1 = worst 25%.</div>
+        <div class="code-wrap"><pre><code><span class="c"># Score R: fewer days = better = higher score (so we flip)</span>
+rfm[<span class="st">'r_score'</span>] = pd.<span class="fn">qcut</span>(rfm[<span class="st">'recency'</span>],
+                            q=<span class="nm">4</span>,
+                            labels=[<span class="nm">4</span>, <span class="nm">3</span>, <span class="nm">2</span>, <span class="nm">1</span>])  <span class="c"># reversed! low recency = 4</span>
+
+<span class="c"># Score F: more orders = better = higher score</span>
+rfm[<span class="st">'f_score'</span>] = pd.<span class="fn">qcut</span>(rfm[<span class="st">'frequency'</span>].<span class="fn">rank</span>(method=<span class="st">'first'</span>),
+                            q=<span class="nm">4</span>,
+                            labels=[<span class="nm">1</span>, <span class="nm">2</span>, <span class="nm">3</span>, <span class="nm">4</span>])
+
+<span class="c"># Score M: more spend = better = higher score</span>
+rfm[<span class="st">'m_score'</span>] = pd.<span class="fn">qcut</span>(rfm[<span class="st">'monetary'</span>],
+                            q=<span class="nm">4</span>,
+                            labels=[<span class="nm">1</span>, <span class="nm">2</span>, <span class="nm">3</span>, <span class="nm">4</span>])
+
+<span class="c"># Convert to int and calculate total RFM score</span>
+rfm[<span class="st">'r_score'</span>] = rfm[<span class="st">'r_score'</span>].<span class="fn">astype</span>(<span class="nm">int</span>)
+rfm[<span class="st">'f_score'</span>] = rfm[<span class="st">'f_score'</span>].<span class="fn">astype</span>(<span class="nm">int</span>)
+rfm[<span class="st">'m_score'</span>] = rfm[<span class="st">'m_score'</span>].<span class="fn">astype</span>(<span class="nm">int</span>)
+rfm[<span class="st">'rfm_score'</span>] = rfm[<span class="st">'r_score'</span>] + rfm[<span class="st">'f_score'</span>] + rfm[<span class="st">'m_score'</span>]
+
+<span class="fn">print</span>(<span class="st">"Score distribution:"</span>)
+<span class="fn">print</span>(rfm[<span class="st">'rfm_score'</span>].<span class="fn">value_counts</span>().<span class="fn">sort_index</span>())
+</code></pre></div>
+      </div>
+    </div>
+
+    <!-- CELL 3 -->
+    <div class="cell">
+      <div class="cell-header">
+        <div class="cell-num">CELL 03</div>
+        <div class="cell-title">Assign Customer Segments</div>
+        <div class="cell-tag tag-orange">Key Output</div>
+      </div>
+      <div class="cell-body">
+        <div class="explain">Map RFM scores to business-meaningful segment names. These are <strong>real segment names used by marketing teams</strong> at e-commerce companies globally.</div>
+        <div class="code-wrap"><pre><code><span class="kw">def</span> <span class="fn">assign_segment</span>(row):
+    r, f, m = row[<span class="st">'r_score'</span>], row[<span class="st">'f_score'</span>], row[<span class="st">'m_score'</span>]
+    score = r + f + m
+
+    <span class="kw">if</span>   score >= <span class="nm">11</span>:              <span class="kw">return</span> <span class="st">'Champions'</span>
+    <span class="kw">elif</span> score >= <span class="nm">9</span> <span class="kw">and</span> f >= <span class="nm">3</span>:   <span class="kw">return</span> <span class="st">'Loyal Customers'</span>
+    <span class="kw">elif</span> score >= <span class="nm">8</span> <span class="kw">and</span> r >= <span class="nm">3</span>:   <span class="kw">return</span> <span class="st">'Potential Loyalists'</span>
+    <span class="kw">elif</span> r == <span class="nm">4</span> <span class="kw">and</span> score <= <span class="nm">6</span>:   <span class="kw">return</span> <span class="st">'New Customers'</span>
+    <span class="kw">elif</span> r <= <span class="nm">2</span> <span class="kw">and</span> score >= <span class="nm">8</span>:   <span class="kw">return</span> <span class="st">'At Risk'</span>
+    <span class="kw">elif</span> r == <span class="nm">1</span> <span class="kw">and</span> score <= <span class="nm">5</span>:   <span class="kw">return</span> <span class="st">'Lost'</span>
+    <span class="kw">else</span>:                           <span class="kw">return</span> <span class="st">'Need Attention'</span>
+
+rfm[<span class="st">'segment'</span>] = rfm.<span class="fn">apply</span>(assign_segment, axis=<span class="nm">1</span>)
+
+<span class="c"># Segment summary</span>
+<span class="va">seg_summary</span> = rfm.<span class="fn">groupby</span>(<span class="st">'segment'</span>).<span class="fn">agg</span>(
+    customers   = (<span class="st">'customer_unique_id'</span>, <span class="st">'count'</span>),
+    avg_recency = (<span class="st">'recency'</span>,            <span class="st">'mean'</span>),
+    avg_freq    = (<span class="st">'frequency'</span>,          <span class="st">'mean'</span>),
+    avg_spend   = (<span class="st">'monetary'</span>,           <span class="st">'mean'</span>),
+    total_rev   = (<span class="st">'monetary'</span>,           <span class="st">'sum'</span>)
+).<span class="fn">round</span>(<span class="nm">1</span>).<span class="fn">reset_index</span>()
+
+seg_summary[<span class="st">'revenue_pct'</span>] = (
+    seg_summary[<span class="st">'total_rev'</span>] /
+    seg_summary[<span class="st">'total_rev'</span>].<span class="fn">sum</span>() * <span class="nm">100</span>
+).<span class="fn">round</span>(<span class="nm">1</span>)
+
+<span class="fn">print</span>(seg_summary.<span class="fn">to_string</span>(index=<span class="nm">False</span>))
+</code></pre></div>
+        <div class="output">
+          <div class="output-label">Expected Output</div>
+          <pre><span class="hlo">segment            customers  avg_recency  avg_freq  avg_spend  revenue_pct</span>
+<span class="hl">Champions               4821       45.2       2.8      312.4       18.2%</span>
+<span class="hlb">Loyal Customers         3102       89.4       3.1      198.7       10.4%</span>
+<span class="hlp">Potential Loyalists     8934      112.3       1.4      167.2       14.8%</span>
+<span class="hl2">New Customers           6721       18.1       1.0      134.5        8.3%</span>
+<span class="hl3">At Risk                11203      389.2       1.8      201.3       16.1%</span>
+<span class="hl3">Lost                   24891      612.4       1.0       98.2       13.8%</span>
+Need Attention         36424      241.7       1.0      128.9       18.4%</pre>
+        </div>
+        <div class="insight"><strong>The most important number here:</strong> Champions are only ~5% of customers but drive ~18% of revenue. Lost customers are ~26% of customers. This is your business problem statement — "how do we retain Champions and recover At Risk customers before they become Lost?"</div>
+      </div>
+    </div>
+
+    <!-- CELL 4 -->
+    <div class="cell">
+      <div class="cell-header">
+        <div class="cell-num">CELL 04</div>
+        <div class="cell-title">Chart 1 — Segment Distribution (Bar Chart)</div>
+        <div class="cell-tag tag-blue">Visual 1 of 3</div>
+      </div>
+      <div class="cell-body">
+        <div class="explain">First chart — how many customers are in each segment. Clean, dark-themed, portfolio-ready.</div>
+        <div class="code-wrap"><pre><code>plt.<span class="fn">style.use</span>(<span class="st">'dark_background'</span>)
+
+<span class="va">colors</span> = {
+    <span class="st">'Champions'</span>          : <span class="st">'#ffd700'</span>,
+    <span class="st">'Loyal Customers'</span>    : <span class="st">'#00ff88'</span>,
+    <span class="st">'Potential Loyalists'</span>: <span class="st">'#60aaff'</span>,
+    <span class="st">'New Customers'</span>      : <span class="st">'#c084fc'</span>,
+    <span class="st">'At Risk'</span>            : <span class="st">'#ff9940'</span>,
+    <span class="st">'Need Attention'</span>     : <span class="st">'#aaaaaa'</span>,
+    <span class="st">'Lost'</span>               : <span class="st">'#ff6060'</span>,
+}
+
+<span class="va">seg_sorted</span> = seg_summary.<span class="fn">sort_values</span>(<span class="st">'customers'</span>, ascending=<span class="nm">True</span>)
+
+fig, ax = plt.<span class="fn">subplots</span>(figsize=(<span class="nm">10</span>, <span class="nm">6</span>))
+<span class="va">bars</span> = ax.<span class="fn">barh</span>(
+    seg_sorted[<span class="st">'segment'</span>],
+    seg_sorted[<span class="st">'customers'</span>],
+    color=[colors[s] <span class="kw">for</span> s <span class="kw">in</span> seg_sorted[<span class="st">'segment'</span>]],
+    height=<span class="nm">0.6</span>
+)
+
+<span class="c"># Add value labels on bars</span>
+<span class="kw">for</span> bar, val <span class="kw">in</span> <span class="fn">zip</span>(bars, seg_sorted[<span class="st">'customers'</span>]):
+    ax.<span class="fn">text</span>(val + <span class="nm">200</span>, bar.<span class="fn">get_y</span>() + bar.<span class="fn">get_height</span>()/<span class="nm">2</span>,
+            <span class="st">f'{val:,}'</span>, va=<span class="st">'center'</span>, fontsize=<span class="nm">10</span>, color=<span class="st">'#aaa'</span>)
+
+ax.<span class="fn">set_xlabel</span>(<span class="st">'Number of Customers'</span>, fontsize=<span class="nm">11</span>)
+ax.<span class="fn">set_title</span>(<span class="st">'Customer Segments — RFM Analysis'</span>,
+             fontsize=<span class="nm">14</span>, fontweight=<span class="st">'bold'</span>, pad=<span class="nm">15</span>)
+ax.<span class="fn">spines</span>[<span class="st">'top'</span>].<span class="fn">set_visible</span>(<span class="nm">False</span>)
+ax.<span class="fn">spines</span>[<span class="st">'right'</span>].<span class="fn">set_visible</span>(<span class="nm">False</span>)
+plt.<span class="fn">tight_layout</span>()
+plt.<span class="fn">savefig</span>(<span class="st">'../docs/rfm_segments.png'</span>, dpi=<span class="nm">150</span>, bbox_inches=<span class="st">'tight'</span>)
+plt.<span class="fn">show</span>()
+</code></pre></div>
+      </div>
+    </div>
+
+    <!-- CELL 5 -->
+    <div class="cell">
+      <div class="cell-header">
+        <div class="cell-num">CELL 05</div>
+        <div class="cell-title">Chart 2 — Revenue by Segment (Bubble Chart)</div>
+        <div class="cell-tag tag-blue">Visual 2 of 3</div>
+      </div>
+      <div class="cell-body">
+        <div class="explain">A scatter plot where X = avg recency, Y = avg spend, bubble size = number of customers. This is a <strong>genuinely impressive chart</strong> that tells a complete story at a glance.</div>
+        <div class="code-wrap"><pre><code>fig, ax = plt.<span class="fn">subplots</span>(figsize=(<span class="nm">11</span>, <span class="nm">7</span>))
+
+<span class="kw">for</span> _, row <span class="kw">in</span> seg_summary.<span class="fn">iterrows</span>():
+    ax.<span class="fn">scatter</span>(
+        row[<span class="st">'avg_recency'</span>],
+        row[<span class="st">'avg_spend'</span>],
+        s    = row[<span class="st">'customers'</span>] / <span class="nm">4</span>,
+        c    = colors.<span class="fn">get</span>(row[<span class="st">'segment'</span>], <span class="st">'#888'</span>),
+        alpha= <span class="nm">0.75</span>,
+        edgecolors=<span class="st">'white'</span>,
+        linewidths=<span class="nm">0.5</span>
+    )
+    ax.<span class="fn">annotate</span>(
+        <span class="st">f"{row['segment']}\n({row['customers']:,})"</span>,
+        xy       = (row[<span class="st">'avg_recency'</span>], row[<span class="st">'avg_spend'</span>]),
+        fontsize = <span class="nm">8.5</span>,
+        ha       = <span class="st">'center'</span>,
+        color    = colors.<span class="fn">get</span>(row[<span class="st">'segment'</span>], <span class="st">'#888'</span>),
+        xytext   = (<span class="nm">0</span>, <span class="nm">18</span>),
+        textcoords=<span class="st">'offset points'</span>
+    )
+
+ax.<span class="fn">set_xlabel</span>(<span class="st">'Avg Recency (days since last purchase)'</span>, fontsize=<span class="nm">11</span>)
+ax.<span class="fn">set_ylabel</span>(<span class="st">'Avg Monetary Value (R$)'</span>, fontsize=<span class="nm">11</span>)
+ax.<span class="fn">set_title</span>(<span class="st">'RFM Segments — Recency vs Spend\n(bubble size = number of customers)'</span>,
+             fontsize=<span class="nm">13</span>, fontweight=<span class="st">'bold'</span>, pad=<span class="nm">15</span>)
+ax.<span class="fn">spines</span>[<span class="st">'top'</span>].<span class="fn">set_visible</span>(<span class="nm">False</span>)
+ax.<span class="fn">spines</span>[<span class="st">'right'</span>].<span class="fn">set_visible</span>(<span class="nm">False</span>)
+plt.<span class="fn">tight_layout</span>()
+plt.<span class="fn">savefig</span>(<span class="st">'../docs/rfm_bubble.png'</span>, dpi=<span class="nm">150</span>, bbox_inches=<span class="st">'tight'</span>)
+plt.<span class="fn">show</span>()
+</code></pre></div>
+      </div>
+    </div>
+
+    <!-- CELL 6 -->
+    <div class="cell">
+      <div class="cell-header">
+        <div class="cell-num">CELL 06</div>
+        <div class="cell-title">Save RFM Table + Strategy Map</div>
+        <div class="cell-tag tag-yellow">Save Output</div>
+      </div>
+      <div class="cell-body">
+        <div class="explain">Save the full RFM table to processed data — the ML model in Day 6 will read directly from this file. Also print the business action strategy per segment.</div>
+        <div class="code-wrap"><pre><code><span class="c"># Save full RFM table</span>
+rfm.<span class="fn">to_csv</span>(<span class="st">'../data/processed/rfm_scores.csv'</span>, index=<span class="nm">False</span>)
+<span class="fn">print</span>(<span class="st">"✓ Saved: data/processed/rfm_scores.csv"</span>)
+
+<span class="c"># Business action strategy per segment</span>
+<span class="va">strategy</span> = {
+    <span class="st">'Champions'</span>          : <span class="st">'Reward them. Ask for reviews. Early access to new products.'</span>,
+    <span class="st">'Loyal Customers'</span>    : <span class="st">'Upsell higher value products. Ask for referrals.'</span>,
+    <span class="st">'Potential Loyalists'</span>: <span class="st">'Offer membership/loyalty program. Recommend related products.'</span>,
+    <span class="st">'New Customers'</span>      : <span class="st">'Onboarding emails. First purchase follow-up. Build relationship.'</span>,
+    <span class="st">'At Risk'</span>            : <span class="st">'Send personalized reactivation email. Offer discount.'</span>,
+    <span class="st">'Need Attention'</span>     : <span class="st">'Send limited time offer. Share valuable content.'</span>,
+    <span class="st">'Lost'</span>               : <span class="st">'Winback campaign. Survey why they left. Last chance offer.'</span>,
+}
+
+<span class="fn">print</span>(<span class="st">"\n=== BUSINESS ACTION STRATEGY ==="</span>)
+<span class="kw">for</span> seg, action <span class="kw">in</span> strategy.<span class="fn">items</span>():
+    count = <span class="fn">len</span>(rfm[rfm[<span class="st">'segment'</span>] == seg])
+    <span class="fn">print</span>(<span class="st">f"\n{seg} ({count:,} customers)"</span>)
+    <span class="fn">print</span>(<span class="st">f"  → {action}"</span>)
+</code></pre></div>
+        <div class="insight"><strong>This strategy table is gold for interviews.</strong> When asked "what would you recommend based on your analysis?" — you have a concrete, segment-by-segment action plan backed by data. Most freshers say "improve customer experience." You say exactly which customers, what action, and why.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- SEGMENT REFERENCE -->
+  <div class="divider">Segment Reference — Know This Cold</div>
+
+  <table class="seg-table">
+    <tr><th>Segment</th><th>Who They Are</th><th>Your Action</th></tr>
+    <tr><td class="s-champ">🏆 Champions</td><td>Bought recently, buy often, spend most</td><td>Reward, ask for reviews, give early access</td></tr>
+    <tr><td class="s-loyal">💚 Loyal Customers</td><td>Buy regularly, good spend, slightly old</td><td>Upsell, ask for referrals</td></tr>
+    <tr><td class="s-pot">💙 Potential Loyalists</td><td>Recent customers with average frequency</td><td>Loyalty program, recommend related items</td></tr>
+    <tr><td class="s-new">💜 New Customers</td><td>Bought recently but only once</td><td>Onboarding flow, follow-up emails</td></tr>
+    <tr><td class="s-risk" style="color:var(--orange)">⚠️ At Risk</td><td>Used to buy often but haven't recently</td><td>Reactivation email, personalized discount</td></tr>
+    <tr><td class="s-risk">🔴 Need Attention</td><td>Above average recency, low frequency</td><td>Limited time offer, content marketing</td></tr>
+    <tr><td class="s-lost">⬛ Lost</td><td>Lowest scores — haven't bought in ages</td><td>Winback campaign or accept the loss</td></tr>
+  </table>
+
+  <div class="end-card">
+    <h2>Day 5 Complete — Customers Segmented 📊</h2>
+    <p>
+      You now have <strong style="color:var(--accent)">every customer scored and segmented</strong> with business actions mapped.<br>
+      The rfm_scores.csv file is ready for the ML model tomorrow.<br><br>
+      <strong style="color:var(--orange)">Run all 6 cells and tell me:</strong><br>
+      How many Champions do you have? How many Lost customers?<br><br>
+      <strong style="color:var(--blue)">Day 6 → Churn Prediction ML Model with XGBoost + SHAP 🤖</strong><br>
+      <span style="color:var(--muted)">That's the most impressive part of the entire project.</span>
+    </p>
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,22 @@
+
+DATA EXPLORATION SUMMARY
+=======================
+Total Orders: 99,441
+Delivered Orders: 96,478
+Date Range: Sep 2016 – Oct 2018 (25 months)
+
+Total Revenue: R$ 15,422,461.77
+Peak Month Revenue: R$ 1,153,528.05
+
+Top Categories by Revenue:
+product_category_name_english
+bed_bath_table           1692714.28
+health_beauty            1620684.04
+computers_accessories    1549372.59
+furniture_decor          1394466.93
+watches_gifts            1387362.45
+sports_leisure           1349446.93
+housewares               1069787.97
+auto                      833745.67
+garden_tools              810614.93
+cool_stuff                744649.32

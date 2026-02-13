@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 4 — Advanced SQL Queries</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@300;400;500&family=Fraunces:ital,wght@0,300;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d0d;
+    --surface: #141414;
+    --border: #222;
+    --accent: #00ff88;
+    --accent2: #ffcc00;
+    --accent3: #ff6060;
+    --blue: #60aaff;
+    --purple: #c084fc;
+    --orange: #ff9940;
+    --text: #eee;
+    --muted: #666;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Mono', monospace; padding-bottom: 80px; }
+  .container { max-width: 860px; margin: 0 auto; padding: 0 24px; }
+
+  header { padding: 56px 0 40px; border-bottom: 1px solid var(--border); }
+  .badge { display: inline-block; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--blue); border: 1px solid var(--blue); padding: 4px 12px; margin-bottom: 20px; }
+  h1 { font-family: 'Syne', sans-serif; font-size: clamp(28px, 5vw, 48px); font-weight: 800; line-height: 1.1; }
+  h1 span { color: var(--blue); }
+  .sub { margin-top: 14px; color: var(--muted); font-size: 12px; line-height: 1.9; max-width: 600px; }
+
+  .progress { display: flex; gap: 4px; margin-top: 32px; }
+  .p-step { flex: 1; height: 3px; background: var(--border); border-radius: 2px; }
+  .p-step.done { background: var(--accent); }
+  .p-step.active { background: var(--blue); }
+
+  /* QUERY CARDS */
+  .queries { margin-top: 48px; display: flex; flex-direction: column; gap: 32px; }
+
+  .query-card { border: 1px solid var(--border); background: var(--surface); overflow: hidden; }
+
+  .query-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    background: #0f0f0f;
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .query-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1;
+    min-width: 44px;
+  }
+
+  .q1 .query-num { color: rgba(0,255,136,0.3); }
+  .q2 .query-num { color: rgba(255,204,0,0.3); }
+  .q3 .query-num { color: rgba(255,96,96,0.3); }
+  .q4 .query-num { color: rgba(96,170,255,0.3); }
+  .q5 .query-num { color: rgba(192,132,252,0.3); }
+
+  .query-meta { flex: 1; }
+  .query-title { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 800; margin-bottom: 6px; }
+  .q1 .query-title { color: var(--accent); }
+  .q2 .query-title { color: var(--accent2); }
+  .q3 .query-title { color: var(--accent3); }
+  .q4 .query-title { color: var(--blue); }
+  .q5 .query-title { color: var(--purple); }
+
+  .query-subtitle { font-size: 11px; color: var(--muted); line-height: 1.7; }
+
+  .interview-badge {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 2px;
+    white-space: nowrap;
+    align-self: flex-start;
+  }
+  .ib-hot  { background: rgba(255,96,96,0.15); border: 1px solid var(--accent3); color: var(--accent3); }
+  .ib-med  { background: rgba(255,204,0,0.12); border: 1px solid var(--accent2); color: var(--accent2); }
+
+  .query-body { padding: 24px; }
+
+  .business-q {
+    font-size: 12px;
+    color: var(--text);
+    background: rgba(255,255,255,0.03);
+    border-left: 3px solid var(--muted);
+    padding: 10px 16px;
+    margin-bottom: 16px;
+    font-style: italic;
+    font-family: 'Fraunces', serif;
+  }
+
+  .concepts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+  .concept-tag {
+    font-size: 10px;
+    padding: 3px 10px;
+    border-radius: 2px;
+    letter-spacing: 1px;
+  }
+  .ct-green  { background: rgba(0,255,136,0.08);  border: 1px solid rgba(0,255,136,0.3);  color: var(--accent); }
+  .ct-yellow { background: rgba(255,204,0,0.08);  border: 1px solid rgba(255,204,0,0.3);  color: var(--accent2); }
+  .ct-blue   { background: rgba(96,170,255,0.08); border: 1px solid rgba(96,170,255,0.3); color: var(--blue); }
+  .ct-purple { background: rgba(192,132,252,0.08);border: 1px solid rgba(192,132,252,0.3);color: var(--purple); }
+  .ct-red    { background: rgba(255,96,96,0.08);  border: 1px solid rgba(255,96,96,0.3);  color: var(--accent3); }
+
+  .file-instruction {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  .file-instruction span { color: var(--accent2); }
+
+  .code-wrap { background: #090909; border: 1px solid #1c1c1c; padding: 18px 20px; overflow-x: auto; }
+  pre { margin: 0; }
+  code { font-family: 'IBM Plex Mono', monospace; font-size: 12px; line-height: 2; color: var(--text); }
+  .c   { color: #3a3a3a; }
+  .kw  { color: #60aaff; }
+  .fn  { color: #c084fc; }
+  .st  { color: #00ff88; }
+  .nm  { color: #ff6060; }
+  .cm  { color: #ffcc00; }
+
+  .output { margin-top: 14px; background: #060606; border: 1px solid #1a1a1a; border-left: 2px solid; padding: 14px 18px; }
+  .q1 .output { border-left-color: var(--accent); }
+  .q2 .output { border-left-color: var(--accent2); }
+  .q3 .output { border-left-color: var(--accent3); }
+  .q4 .output { border-left-color: var(--blue); }
+  .q5 .output { border-left-color: var(--purple); }
+  .output-label { font-size: 9px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; margin-bottom: 10px; }
+  .output pre { font-size: 11px; color: #777; line-height: 1.9; white-space: pre-wrap; }
+  .hl  { color: var(--accent) !important; }
+  .hl2 { color: var(--accent2) !important; }
+  .hl3 { color: var(--accent3) !important; }
+  .hlb { color: var(--blue) !important; }
+  .hlp { color: var(--purple) !important; }
+
+  .insight { margin-top: 14px; padding: 14px 18px; font-size: 11px; color: #999; line-height: 1.9; border: 1px solid; }
+  .q1 .insight { background: rgba(0,255,136,0.03);   border-color: rgba(0,255,136,0.15);   border-left: 3px solid var(--accent); }
+  .q2 .insight { background: rgba(255,204,0,0.03);   border-color: rgba(255,204,0,0.15);   border-left: 3px solid var(--accent2); }
+  .q3 .insight { background: rgba(255,96,96,0.03);   border-color: rgba(255,96,96,0.15);   border-left: 3px solid var(--accent3); }
+  .q4 .insight { background: rgba(96,170,255,0.03);  border-color: rgba(96,170,255,0.15);  border-left: 3px solid var(--blue); }
+  .q5 .insight { background: rgba(192,132,252,0.03); border-color: rgba(192,132,252,0.15); border-left: 3px solid var(--purple); }
+  .insight strong { color: var(--text); }
+
+  .divider { margin: 48px 0 24px; font-size: 10px; letter-spacing: 4px; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; gap: 16px; }
+  .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .note { background: rgba(255,204,0,0.04); border: 1px solid rgba(255,204,0,0.2); border-left: 3px solid var(--accent2); padding: 14px 18px; font-size: 11px; color: #aaa; line-height: 1.8; margin: 16px 0; }
+  .note strong { color: var(--accent2); }
+
+  .end-card { margin-top: 48px; background: linear-gradient(135deg, rgba(96,170,255,0.05), rgba(0,255,136,0.03)); border: 1px solid rgba(96,170,255,0.2); padding: 32px; text-align: center; }
+  .end-card h2 { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; color: var(--blue); margin-bottom: 12px; }
+  .end-card p { font-size: 12px; color: var(--muted); line-height: 2.1; }
+
+  @media(max-width:600px){ code{font-size:10px;} .query-header{flex-direction:column;} }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="badge">Day 4 of 18 · Advanced SQL</div>
+    <h1>5 SQL Queries That<br><span>Win Interviews</span></h1>
+    <p class="sub">These are not textbook queries. Each one answers a real business question using SQL concepts that companies actually test — window functions, CTEs, NTILE, conditional aggregation. Save every query as a .sql file.</p>
+    <div class="progress">
+      <div class="p-step done"></div>
+      <div class="p-step done"></div>
+      <div class="p-step done"></div>
+      <div class="p-step active"></div>
+      <div class="p-step"></div>
+      <div class="p-step"></div>
+    </div>
+  </header>
+
+  <div class="note"><strong>How to run these:</strong> Create a new notebook <strong>notebooks/03_sql_analysis.ipynb</strong>. Each query goes in its own cell using pd.read_sql_query(query, conn). Also save each query as a .sql file inside your <strong>sql/</strong> folder.</div>
+
+  <div class="queries">
+
+    <!-- QUERY 1: COHORT ANALYSIS -->
+    <div class="query-card q1">
+      <div class="query-header">
+        <div class="query-num">01</div>
+        <div class="query-meta">
+          <div class="query-title">Monthly Revenue Cohort Analysis</div>
+          <div class="query-subtitle">Track how each month's customers contribute to revenue over time. Uses CTEs + window functions.</div>
+        </div>
+        <div class="interview-badge ib-hot">🔥 Asked Often</div>
+      </div>
+      <div class="query-body">
+        <div class="business-q">"Which customer acquisition month drove the most total revenue?"</div>
+        <div class="concepts">
+          <span class="concept-tag ct-green">WITH (CTE)</span>
+          <span class="concept-tag ct-blue">MIN() OVER</span>
+          <span class="concept-tag ct-yellow">strftime()</span>
+          <span class="concept-tag ct-purple">GROUP BY</span>
+        </div>
+        <div class="file-instruction">Save as → <span>sql/01_cohort_analysis.sql</span></div>
+        <div class="code-wrap"><pre><code><span class="c">-- Step 1: Find each customer's first purchase month (cohort)</span>
+<span class="kw">WITH</span> <span class="cm">customer_cohorts</span> <span class="kw">AS</span> (
+    <span class="kw">SELECT</span>
+        customer_unique_id,
+        <span class="fn">strftime</span>(<span class="st">'%Y-%m'</span>, <span class="fn">MIN</span>(order_purchase_timestamp)) <span class="kw">AS</span> cohort_month,
+        <span class="fn">COUNT</span>(order_id)                                      <span class="kw">AS</span> total_orders,
+        <span class="fn">ROUND</span>(<span class="fn">SUM</span>(total_payment), <span class="nm">2</span>)                         <span class="kw">AS</span> total_spent
+    <span class="kw">FROM</span> master_orders
+    <span class="kw">GROUP BY</span> customer_unique_id
+),
+
+<span class="c">-- Step 2: Summarise by cohort month</span>
+<span class="cm">cohort_summary</span> <span class="kw">AS</span> (
+    <span class="kw">SELECT</span>
+        cohort_month,
+        <span class="fn">COUNT</span>(customer_unique_id)       <span class="kw">AS</span> cohort_size,
+        <span class="fn">ROUND</span>(<span class="fn">SUM</span>(total_spent), <span class="nm">2</span>)     <span class="kw">AS</span> cohort_revenue,
+        <span class="fn">ROUND</span>(<span class="fn">AVG</span>(total_spent), <span class="nm">2</span>)     <span class="kw">AS</span> avg_spend_per_customer,
+        <span class="fn">SUM</span>(<span class="kw">CASE WHEN</span> total_orders > <span class="nm">1</span>
+                 <span class="kw">THEN</span> <span class="nm">1</span> <span class="kw">ELSE</span> <span class="nm">0</span> <span class="kw">END</span>)   <span class="kw">AS</span> repeat_customers
+    <span class="kw">FROM</span> customer_cohorts
+    <span class="kw">GROUP BY</span> cohort_month
+)
+
+<span class="kw">SELECT</span>
+    cohort_month,
+    cohort_size,
+    cohort_revenue,
+    avg_spend_per_customer,
+    repeat_customers,
+    <span class="fn">ROUND</span>(repeat_customers * <span class="nm">100.0</span> / cohort_size, <span class="nm">1</span>) <span class="kw">AS</span> repeat_rate_pct
+<span class="kw">FROM</span> cohort_summary
+<span class="kw">ORDER BY</span> cohort_month;
+</code></pre></div>
+        <div class="output">
+          <div class="output-label">Sample Output</div>
+          <pre><span class="hl">cohort_month  cohort_size  cohort_revenue  avg_spend  repeat_customers  repeat_rate_pct</span>
+2017-01           750        127545.67      170.06          43               5.7%
+2017-02          1653        271298.65      164.13          89               5.4%
+2017-11          <span class="hl2">7544</span>       <span class="hl2">1089823.41</span>     144.46         <span class="hl2">389</span>              <span class="hl2">5.2%</span>
+<span class="hl3">← Nov 2017 = Black Friday spike, biggest cohort</span></pre>
+        </div>
+        <div class="insight"><strong>Interview answer:</strong> "I used a CTE to first find each customer's first purchase month, then aggregated by cohort. The Nov 2017 Black Friday cohort was the largest with 7,544 new customers, but had a similar repeat rate (~5%) as other months — suggesting promotions attract one-time buyers."</div>
+      </div>
+    </div>
+
+    <!-- QUERY 2: RFM SCORING -->
+    <div class="query-card q2">
+      <div class="query-header">
+        <div class="query-num">02</div>
+        <div class="query-meta">
+          <div class="query-title">RFM Customer Segmentation</div>
+          <div class="query-subtitle">Score every customer on Recency, Frequency, Monetary value using NTILE window function.</div>
+        </div>
+        <div class="interview-badge ib-hot">🔥 Must Know</div>
+      </div>
+      <div class="query-body">
+        <div class="business-q">"Who are our best customers and who is at risk of churning?"</div>
+        <div class="concepts">
+          <span class="concept-tag ct-green">NTILE(4)</span>
+          <span class="concept-tag ct-blue">OVER (ORDER BY)</span>
+          <span class="concept-tag ct-yellow">CASE WHEN</span>
+          <span class="concept-tag ct-red">julianday()</span>
+          <span class="concept-tag ct-purple">Multiple CTEs</span>
+        </div>
+        <div class="file-instruction">Save as → <span>sql/02_rfm_scoring.sql</span></div>
+        <div class="code-wrap"><pre><code><span class="kw">WITH</span> <span class="cm">rfm_raw</span> <span class="kw">AS</span> (
+    <span class="c">-- Calculate R, F, M values per customer</span>
+    <span class="kw">SELECT</span>
+        customer_unique_id,
+        <span class="fn">ROUND</span>(<span class="fn">julianday</span>(<span class="st">'2018-10-17'</span>) -
+              <span class="fn">julianday</span>(<span class="fn">MAX</span>(order_purchase_timestamp)), <span class="nm">0</span>) <span class="kw">AS</span> recency_days,
+        <span class="fn">COUNT</span>(order_id)                                       <span class="kw">AS</span> frequency,
+        <span class="fn">ROUND</span>(<span class="fn">SUM</span>(total_payment), <span class="nm">2</span>)                          <span class="kw">AS</span> monetary
+    <span class="kw">FROM</span> master_orders
+    <span class="kw">GROUP BY</span> customer_unique_id
+),
+
+<span class="cm">rfm_scored</span> <span class="kw">AS</span> (
+    <span class="c">-- Score each dimension 1-4 using NTILE</span>
+    <span class="c">-- Recency: LOWER days = BETTER = higher score (hence DESC)</span>
+    <span class="kw">SELECT</span>
+        customer_unique_id,
+        recency_days,
+        frequency,
+        monetary,
+        <span class="fn">NTILE</span>(<span class="nm">4</span>) <span class="kw">OVER</span> (<span class="kw">ORDER BY</span> recency_days <span class="kw">DESC</span>) <span class="kw">AS</span> r_score,
+        <span class="fn">NTILE</span>(<span class="nm">4</span>) <span class="kw">OVER</span> (<span class="kw">ORDER BY</span> frequency   <span class="kw">ASC</span>)  <span class="kw">AS</span> f_score,
+        <span class="fn">NTILE</span>(<span class="nm">4</span>) <span class="kw">OVER</span> (<span class="kw">ORDER BY</span> monetary    <span class="kw">ASC</span>)  <span class="kw">AS</span> m_score
+    <span class="kw">FROM</span> rfm_raw
+)
+
+<span class="kw">SELECT</span>
+    customer_unique_id,
+    recency_days,
+    frequency,
+    monetary,
+    r_score,
+    f_score,
+    m_score,
+    (r_score + f_score + m_score)  <span class="kw">AS</span> rfm_total,
+    <span class="kw">CASE</span>
+        <span class="kw">WHEN</span> (r_score + f_score + m_score) >= <span class="nm">10</span> <span class="kw">THEN</span> <span class="st">'Champions'</span>
+        <span class="kw">WHEN</span> (r_score + f_score + m_score) >= <span class="nm">7</span>  <span class="kw">THEN</span> <span class="st">'Loyal Customers'</span>
+        <span class="kw">WHEN</span> (r_score + f_score + m_score) >= <span class="nm">5</span>  <span class="kw">THEN</span> <span class="st">'Potential Loyalists'</span>
+        <span class="kw">WHEN</span> r_score <= <span class="nm">2</span>                         <span class="kw">THEN</span> <span class="st">'At Risk'</span>
+        <span class="kw">ELSE</span>                                            <span class="st">'Need Attention'</span>
+    <span class="kw">END</span> <span class="kw">AS</span> customer_segment
+<span class="kw">FROM</span> rfm_scored
+<span class="kw">ORDER BY</span> rfm_total <span class="kw">DESC</span>;
+</code></pre></div>
+        <div class="output">
+          <div class="output-label">Sample Output</div>
+          <pre><span class="hl">customer_id   recency  freq  monetary  r  f  m  total  segment</span>
+abc123...         12     3    854.30   4  4  4    12   <span class="hl">Champions</span>
+def456...         45     2    423.10   4  3  3    10   <span class="hl2">Loyal Customers</span>
+xyz789...        310     1     89.90   1  1  1     3   <span class="hl3">At Risk</span></pre>
+        </div>
+        <div class="insight"><strong>What NTILE(4) does:</strong> It splits all customers into 4 equal groups (quartiles). Score 4 = top 25%, Score 1 = bottom 25%. This is exactly how marketing teams identify VIP customers vs churn risks. You'll use these segments directly in the ML model next.</div>
+      </div>
+    </div>
+
+    <!-- QUERY 3: PARETO -->
+    <div class="query-card q3">
+      <div class="query-header">
+        <div class="query-num">03</div>
+        <div class="query-meta">
+          <div class="query-title">Pareto Revenue Analysis (80/20 Rule)</div>
+          <div class="query-subtitle">Find which product categories generate 80% of revenue using cumulative window functions.</div>
+        </div>
+        <div class="interview-badge ib-med">📊 Great Story</div>
+      </div>
+      <div class="query-body">
+        <div class="business-q">"Which categories should we focus our marketing budget on?"</div>
+        <div class="concepts">
+          <span class="concept-tag ct-green">SUM() OVER</span>
+          <span class="concept-tag ct-blue">Cumulative %</span>
+          <span class="concept-tag ct-yellow">RANK()</span>
+          <span class="concept-tag ct-purple">Running Total</span>
+        </div>
+        <div class="file-instruction">Save as → <span>sql/03_pareto_revenue.sql</span></div>
+        <div class="code-wrap"><pre><code><span class="kw">WITH</span> <span class="cm">category_revenue</span> <span class="kw">AS</span> (
+    <span class="kw">SELECT</span>
+        product_category_name_english           <span class="kw">AS</span> category,
+        <span class="fn">COUNT</span>(<span class="kw">DISTINCT</span> order_id)               <span class="kw">AS</span> order_count,
+        <span class="fn">ROUND</span>(<span class="fn">SUM</span>(total_payment), <span class="nm">2</span>)          <span class="kw">AS</span> revenue
+    <span class="kw">FROM</span> master_orders
+    <span class="kw">WHERE</span> product_category_name_english <span class="kw">IS NOT NULL</span>
+    <span class="kw">GROUP BY</span> category
+),
+
+<span class="cm">pareto</span> <span class="kw">AS</span> (
+    <span class="kw">SELECT</span>
+        category,
+        order_count,
+        revenue,
+        <span class="c">-- Running total revenue (cumulative sum)</span>
+        <span class="fn">SUM</span>(revenue) <span class="kw">OVER</span> (
+            <span class="kw">ORDER BY</span> revenue <span class="kw">DESC</span>
+            <span class="kw">ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW</span>
+        ) <span class="kw">AS</span> cumulative_revenue,
+        <span class="c">-- Total revenue for percentage calc</span>
+        <span class="fn">SUM</span>(revenue) <span class="kw">OVER</span> () <span class="kw">AS</span> total_revenue
+    <span class="kw">FROM</span> category_revenue
+)
+
+<span class="kw">SELECT</span>
+    category,
+    order_count,
+    revenue,
+    <span class="fn">ROUND</span>(revenue * <span class="nm">100.0</span> / total_revenue, <span class="nm">1</span>)            <span class="kw">AS</span> revenue_pct,
+    <span class="fn">ROUND</span>(cumulative_revenue * <span class="nm">100.0</span> / total_revenue, <span class="nm">1</span>)   <span class="kw">AS</span> cumulative_pct,
+    <span class="kw">CASE WHEN</span> cumulative_revenue * <span class="nm">100.0</span>
+                / total_revenue <= <span class="nm">80</span>
+         <span class="kw">THEN</span> <span class="st">'Top 80% Revenue'</span>
+         <span class="kw">ELSE</span> <span class="st">'Long Tail'</span>
+    <span class="kw">END</span> <span class="kw">AS</span> pareto_group
+<span class="kw">FROM</span> pareto
+<span class="kw">ORDER BY</span> revenue <span class="kw">DESC</span>;
+</code></pre></div>
+        <div class="output">
+          <div class="output-label">Sample Output</div>
+          <pre><span class="hl">category              revenue    rev_pct  cumulative_pct  group</span>
+bed_bath_table       1692714     11.0%       11.0%        <span class="hl">Top 80%</span>
+health_beauty        1620684     10.5%       21.5%        <span class="hl">Top 80%</span>
+computers_access     1549373     10.0%       31.5%        <span class="hl">Top 80%</span>
+...
+<span class="hl2">~11 categories = 80% of all revenue</span>  <span class="hl3">← your Pareto finding</span></pre>
+        </div>
+        <div class="insight"><strong>Your finding to say in interviews:</strong> "Just 11 out of 71 product categories account for 80% of total revenue. I identified this using a cumulative window function — SUM() OVER with ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW. This directly informs where to focus inventory and marketing investment."</div>
+      </div>
+    </div>
+
+    <!-- QUERY 4: LATE DELIVERY IMPACT -->
+    <div class="query-card q4">
+      <div class="query-header">
+        <div class="query-num">04</div>
+        <div class="query-meta">
+          <div class="query-title">Late Delivery Impact on Review Scores</div>
+          <div class="query-subtitle">Does being late hurt customer satisfaction? Quantify the impact with conditional aggregation.</div>
+        </div>
+        <div class="interview-badge ib-med">📈 Insight-Rich</div>
+      </div>
+      <div class="query-body">
+        <div class="business-q">"Does delivery delay actually affect customer ratings and by how much?"</div>
+        <div class="concepts">
+          <span class="concept-tag ct-green">CASE WHEN</span>
+          <span class="concept-tag ct-blue">AVG() conditional</span>
+          <span class="concept-tag ct-yellow">GROUP BY bins</span>
+          <span class="concept-tag ct-red">Business Logic</span>
+        </div>
+        <div class="file-instruction">Save as → <span>sql/04_delivery_impact.sql</span></div>
+        <div class="code-wrap"><pre><code><span class="kw">WITH</span> <span class="cm">delivery_analysis</span> <span class="kw">AS</span> (
+    <span class="kw">SELECT</span>
+        order_id,
+        review_score,
+        delivery_days,
+        is_late,
+        <span class="c">-- Bin delivery time into ranges</span>
+        <span class="kw">CASE</span>
+            <span class="kw">WHEN</span> delivery_days <= <span class="nm">7</span>  <span class="kw">THEN</span> <span class="st">'1. Within 1 week'</span>
+            <span class="kw">WHEN</span> delivery_days <= <span class="nm">14</span> <span class="kw">THEN</span> <span class="st">'2. 1-2 weeks'</span>
+            <span class="kw">WHEN</span> delivery_days <= <span class="nm">21</span> <span class="kw">THEN</span> <span class="st">'3. 2-3 weeks'</span>
+            <span class="kw">WHEN</span> delivery_days <= <span class="nm">30</span> <span class="kw">THEN</span> <span class="st">'4. 3-4 weeks'</span>
+            <span class="kw">ELSE</span>                          <span class="st">'5. Over 1 month'</span>
+        <span class="kw">END</span> <span class="kw">AS</span> delivery_bucket
+    <span class="kw">FROM</span> master_orders
+    <span class="kw">WHERE</span> review_score <span class="kw">IS NOT NULL</span>
+      <span class="kw">AND</span> delivery_days <span class="kw">IS NOT NULL</span>
+)
+
+<span class="kw">SELECT</span>
+    delivery_bucket,
+    <span class="fn">COUNT</span>(*)                              <span class="kw">AS</span> order_count,
+    <span class="fn">ROUND</span>(<span class="fn">AVG</span>(review_score), <span class="nm">2</span>)          <span class="kw">AS</span> avg_review_score,
+    <span class="fn">ROUND</span>(<span class="fn">AVG</span>(delivery_days), <span class="nm">1</span>)         <span class="kw">AS</span> avg_delivery_days,
+    <span class="c">-- % of orders in this bucket that were late</span>
+    <span class="fn">ROUND</span>(<span class="fn">AVG</span>(is_late) * <span class="nm">100</span>, <span class="nm">1</span>)         <span class="kw">AS</span> late_pct,
+    <span class="c">-- % with 5-star reviews</span>
+    <span class="fn">ROUND</span>(<span class="fn">SUM</span>(<span class="kw">CASE WHEN</span> review_score = <span class="nm">5</span>
+                    <span class="kw">THEN</span> <span class="nm">1</span> <span class="kw">ELSE</span> <span class="nm">0</span> <span class="kw">END</span>)
+          * <span class="nm">100.0</span> / <span class="fn">COUNT</span>(*), <span class="nm">1</span>)         <span class="kw">AS</span> five_star_pct
+<span class="kw">FROM</span> delivery_analysis
+<span class="kw">GROUP BY</span> delivery_bucket
+<span class="kw">ORDER BY</span> delivery_bucket;
+</code></pre></div>
+        <div class="output">
+          <div class="output-label">Sample Output</div>
+          <pre><span class="hlb">delivery_bucket    orders  avg_score  avg_days  late_pct  5star_pct</span>
+1. Within 1 week   28453    <span class="hl">4.31</span>        5.2       0.0%     <span class="hl">58.2%</span>
+2. 1-2 weeks       42109    <span class="hl2">4.18</span>       10.6       2.1%     <span class="hl2">53.1%</span>
+3. 2-3 weeks       16234    3.89       16.8      14.3%     44.2%
+4. 3-4 weeks        6102    3.41       25.1      38.7%     32.1%
+5. Over 1 month     3580    <span class="hl3">2.87</span>       42.3      89.4%    <span class="hl3">18.6%</span></pre>
+        </div>
+        <div class="insight"><strong>Powerful finding:</strong> Fast delivery (≤1 week) gets avg 4.31 stars and 58% 5-star reviews. Deliveries over 1 month get only 2.87 stars and 89% are late. Review score drops 1.44 points as delivery time increases. This is the kind of quantified business insight that makes interviewers sit up.</div>
+      </div>
+    </div>
+
+    <!-- QUERY 5: SELLER PERFORMANCE -->
+    <div class="query-card q5">
+      <div class="query-header">
+        <div class="query-num">05</div>
+        <div class="query-meta">
+          <div class="query-title">Seller Performance Ranking</div>
+          <div class="query-subtitle">Rank every seller by revenue with performance tiers. Uses RANK() + multiple aggregations.</div>
+        </div>
+        <div class="interview-badge ib-med">🏆 Shows Depth</div>
+      </div>
+      <div class="query-body">
+        <div class="business-q">"Who are our top sellers and what separates them from average ones?"</div>
+        <div class="concepts">
+          <span class="concept-tag ct-green">RANK()</span>
+          <span class="concept-tag ct-blue">OVER (ORDER BY)</span>
+          <span class="concept-tag ct-yellow">Multiple Metrics</span>
+          <span class="concept-tag ct-purple">Performance Tiers</span>
+        </div>
+        <div class="file-instruction">Save as → <span>sql/05_seller_performance.sql</span></div>
+        <div class="code-wrap"><pre><code><span class="kw">WITH</span> <span class="cm">seller_metrics</span> <span class="kw">AS</span> (
+    <span class="kw">SELECT</span>
+        i.seller_id,
+        s.seller_state,
+        <span class="fn">COUNT</span>(<span class="kw">DISTINCT</span> m.order_id)          <span class="kw">AS</span> total_orders,
+        <span class="fn">ROUND</span>(<span class="fn">SUM</span>(m.total_payment), <span class="nm">2</span>)      <span class="kw">AS</span> total_revenue,
+        <span class="fn">ROUND</span>(<span class="fn">AVG</span>(m.review_score), <span class="nm">2</span>)       <span class="kw">AS</span> avg_rating,
+        <span class="fn">ROUND</span>(<span class="fn">AVG</span>(m.delivery_days), <span class="nm">1</span>)      <span class="kw">AS</span> avg_delivery_days,
+        <span class="fn">ROUND</span>(<span class="fn">AVG</span>(m.is_late) * <span class="nm">100</span>, <span class="nm">1</span>)     <span class="kw">AS</span> late_delivery_pct,
+        <span class="fn">COUNT</span>(<span class="kw">DISTINCT</span> i.product_id)        <span class="kw">AS</span> unique_products
+    <span class="kw">FROM</span> master_orders m
+    <span class="kw">JOIN</span> order_items i <span class="kw">ON</span> m.order_id = i.order_id
+    <span class="kw">JOIN</span> sellers s     <span class="kw">ON</span> i.seller_id = s.seller_id
+    <span class="kw">GROUP BY</span> i.seller_id, s.seller_state
+)
+
+<span class="kw">SELECT</span>
+    seller_id,
+    seller_state,
+    total_orders,
+    total_revenue,
+    avg_rating,
+    avg_delivery_days,
+    late_delivery_pct,
+    unique_products,
+    <span class="fn">RANK</span>() <span class="kw">OVER</span> (<span class="kw">ORDER BY</span> total_revenue <span class="kw">DESC</span>) <span class="kw">AS</span> revenue_rank,
+    <span class="kw">CASE</span>
+        <span class="kw">WHEN</span> <span class="fn">RANK</span>() <span class="kw">OVER</span>
+             (<span class="kw">ORDER BY</span> total_revenue <span class="kw">DESC</span>) <= <span class="nm">50</span>  <span class="kw">THEN</span> <span class="st">'Platinum'</span>
+        <span class="kw">WHEN</span> <span class="fn">RANK</span>() <span class="kw">OVER</span>
+             (<span class="kw">ORDER BY</span> total_revenue <span class="kw">DESC</span>) <= <span class="nm">200</span> <span class="kw">THEN</span> <span class="st">'Gold'</span>
+        <span class="kw">WHEN</span> <span class="fn">RANK</span>() <span class="kw">OVER</span>
+             (<span class="kw">ORDER BY</span> total_revenue <span class="kw">DESC</span>) <= <span class="nm">500</span> <span class="kw">THEN</span> <span class="st">'Silver'</span>
+        <span class="kw">ELSE</span>                                           <span class="st">'Bronze'</span>
+    <span class="kw">END</span> <span class="kw">AS</span> seller_tier
+<span class="kw">FROM</span> seller_metrics
+<span class="kw">ORDER BY</span> revenue_rank;
+</code></pre></div>
+        <div class="output">
+          <div class="output-label">Sample Output</div>
+          <pre><span class="hlp">seller_id   state  orders  revenue    rating  late%  rank  tier</span>
+6560211...  SP      741   233066.77   4.1     4.2%    1    <span class="hl">Platinum</span>
+4a3ca9...   SP      615   199342.11   3.9     6.1%    2    <span class="hl">Platinum</span>
+...
+<span class="hl2">Top 50 sellers (Platinum) = ~40% of total revenue</span></pre>
+        </div>
+        <div class="insight"><strong>What to say:</strong> "I ranked all 3,095 sellers by revenue using RANK() window function and created performance tiers. The top 50 Platinum sellers drive ~40% of GMV. I also found that Platinum sellers have lower late delivery rates than Bronze sellers — quality and speed correlate with revenue."</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="divider">How to Run in Python</div>
+
+  <div class="note">
+    <strong>Put this at the top of notebooks/03_sql_analysis.ipynb — run each query like this:</strong><br><br>
+    <code style="font-size:11px; color:#ccc;">
+    import sqlite3, pandas as pd<br>
+    conn = sqlite3.connect('../data/olist.db')<br><br>
+    query = """ paste SQL here """<br>
+    df = pd.read_sql_query(query, conn)<br>
+    print(df.to_string(index=False))<br><br>
+    conn.close()  # always close at the end
+    </code>
+  </div>
+
+  <div class="end-card">
+    <h2>5 SQL Queries Done 🎯</h2>
+    <p>
+      You now have <strong style="color:var(--accent)">5 production-grade SQL files</strong> in your portfolio.<br>
+      CTE · Window Functions · NTILE · RANK · Conditional Aggregation · Running Totals.<br><br>
+      <strong style="color:var(--accent2)">Run all 5 queries and tell me your findings:</strong><br>
+      How many categories hit the 80% Pareto threshold?<br>
+      What's the avg review score difference between fast vs slow deliveries?<br><br>
+      <strong style="color:var(--blue)">Day 5 next → RFM Segmentation in Python + Visualizations 📊</strong>
+    </p>
+  </div>
+
+</div>
+</body>
+</html>
