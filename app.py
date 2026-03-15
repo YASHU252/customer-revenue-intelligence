@@ -16,7 +16,7 @@ st.set_page_config(
 # ─── LOAD DATA ────────────────────────────────────────
 @st.cache_data
 def load_data():
-    base = '../data/processed/'
+    base = 'data/processed/'
     master   = pd.read_csv(base + 'master_orders.csv',
                             parse_dates=['order_purchase_timestamp'])
     rfm      = pd.read_csv(base + 'rfm_scores.csv')
@@ -25,12 +25,24 @@ def load_data():
 
 @st.cache_resource
 def load_model():
-    model    = joblib.load('../models/churn_model.pkl')
-    features = joblib.load('../models/feature_names.pkl')
+    # Fixed path - models are in current directory, not ../models/
+    model    = joblib.load('churn_model.pkl')
+    features = joblib.load('feature_names.pkl')
     return model, features
 
-master, rfm, customer_features = load_data()
-model, FEATURES = load_model()
+try:
+    master, rfm, customer_features = load_data()
+    model, FEATURES = load_model()
+except FileNotFoundError as e:
+    st.error(f"❌ Error loading files: {e}")
+    st.error("Make sure you have:")
+    st.error("1. churn_model.pkl and feature_names.pkl in the same directory as app.py")
+    st.error("2. data/processed/ folder with master_orders.csv, rfm_scores.csv, customer_features.csv")
+    st.stop()
+except Exception as e:
+    st.error(f"❌ Unexpected error: {e}")
+    st.error("This might be due to missing dependencies. Run: pip install xgboost")
+    st.stop()
 
 # ─── SIDEBAR NAVIGATION ───────────────────────────────
 st.sidebar.title("📊 CRIS Dashboard")
