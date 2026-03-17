@@ -20,7 +20,7 @@ PERFORMANCE:
 - ROC-AUC: [your metric]
 
 CHURN DEFINITION:
-No purchase in 90+ days after last order
+Churn = No purchase in 90 days
 
 CLASS BALANCE:
 - Training set: [your split]
