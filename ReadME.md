@@ -1,4 +1,4 @@
-# 📊 Customer Revenue Intelligence System
+#  Customer Revenue Intelligence System
 
 ![Python](https://img.shields.io/badge/Python-3.11-blue)
 ![XGBoost](https://img.shields.io/badge/XGBoost-AUC%200.85-green)
@@ -35,15 +35,15 @@ Raw CSVs → Python Cleaning → SQLite DB → SQL Analysis → RFM Segmentation
 | `models/` | Trained XGBoost model (.pkl) |
 | `dashboard/` | Streamlit app |
 
-## 🛠️ Tech Stack
+##  Tech Stack
 Python · Pandas · NumPy · SQLite · XGBoost · Scikit-learn · SHAP · Plotly · Streamlit
 
-## ▶️ Run Locally
+##  Run Locally
 ```bash
 pip install -r requirements.txt
 cd dashboard
 streamlit run app.py
 ```
 
-## 📊 Dataset
+##  Dataset
 Olist Brazilian E-Commerce — free on Kaggle. 9 tables, 100k+ orders, Sep 2016 – Oct 2018.
