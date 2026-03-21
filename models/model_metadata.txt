@@ -1,32 +1,40 @@
 CHURN PREDICTION MODEL
 ======================
 
-Training Date: [Your date]
+Training Date: 2024
 Model Type: XGBoost Classifier
 Training Data: 93,357 customers
 
 FEATURES USED:
-- recency (days since last purchase)
 - frequency (total orders)
 - monetary (total spent)
-- avg_review_score
-- avg_delivery_days
-- late_delivery_rate
+- avg_order_value (mean spend per order)
+- avg_items (avg items per order)
+- avg_freight (avg freight value)
+- installments (avg payment installments)
+- avg_review (avg review score)
+- pct_late (late delivery rate)
+- avg_delivery (avg delivery days)
+- lifespan_days (days between first and last order)
 
 PERFORMANCE:
-- Accuracy: [your metric]%
-- Precision: [your metric]%
-- Recall: [your metric]%
-- ROC-AUC: [your metric]
+- ROC-AUC: 0.8483
+- Precision (Churned): 0.89
+- Recall (Churned): 0.74
+- F1-Score (Churned): 0.81
+- Accuracy: 0.75
 
 CHURN DEFINITION:
-Churn = No purchase in 90 days
+Churn = No purchase in 180 days
 
 CLASS BALANCE:
-- Training set: [your split]
-- Handled with: SMOTE
+- Churn rate: 70.7% (65,962 churned / 27,395 active)
+- Handled with: scale_pos_weight in XGBoost
 
 HYPERPARAMETERS:
-- max_depth: [value]
-- n_estimators: [value]
-- learning_rate: [value]
+- n_estimators: 300
+- max_depth: 5
+- learning_rate: 0.05
+- subsample: 0.8
+- colsample_bytree: 0.8
+- scale_pos_weight: 0.415 (ratio of negatives to positives)
